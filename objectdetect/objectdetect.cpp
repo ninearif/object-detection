@@ -70,6 +70,9 @@ int main(int argc, char *argv[]) {
 void processVideo(char *videoFilename) {
     //create the capture object
     VideoCapture capture(videoFilename);
+    int morph_size = 4;
+    Mat element = getStructuringElement( MORPH_RECT, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
+
     if (!capture.isOpened()) {
         //error in opening the video input
         cerr << "Unable to open video file: " << videoFilename << endl;
@@ -84,7 +87,13 @@ void processVideo(char *videoFilename) {
             exit(EXIT_FAILURE);
         }
         //update the background model
-        pMOG2->apply(frame, fgMaskMOG2);
+        pMOG2->apply(frame, fgMaskMOG2,0);
+        Mat finalMat = fgMaskMOG2.clone();
+        for (int i=1;i<10;i++)
+        {
+            morphologyEx(fgMaskMOG2,finalMat, MORPH_OPEN, element);
+        }
+        imshow("Final",finalMat);
         //get the frame number and write it on the current frame
         stringstream ss;
         rectangle(frame, cv::Point(10, 2), cv::Point(100, 20),
