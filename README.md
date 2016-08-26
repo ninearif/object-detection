@@ -10,5 +10,7 @@ equirements:
 
 compile with following command: 
   > mkdir build && cd build
+  
   > cmake ..
+  
   > make
