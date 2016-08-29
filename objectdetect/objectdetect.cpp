@@ -49,9 +49,9 @@ int main(int argc, char *argv[]) {
     namedWindow("Frame");
     namedWindow("FG Mask MOG 2");
     //create Background Subtractor objects
-    int history = 200;
-    int threshold = 300;
-    bool shadowDetect = false;
+    int history = 500;
+    int threshold = 180;
+    bool shadowDetect = true;
     pMOG2 = createBackgroundSubtractorMOG2(history,threshold,shadowDetect); //MOG2 approach
     if (strcmp(argv[1], "-vid") == 0) {
         //input data coming from a video
@@ -73,10 +73,6 @@ int main(int argc, char *argv[]) {
 void processVideo(char *videoFilename) {
     //create the capture object
     VideoCapture capture(videoFilename);
-    int morph_size = 4;
-
-    //TODO: morpho opening comment
-    Mat element = getStructuringElement( MORPH_ELLIPSE, Size( 2*morph_size + 1, 2*morph_size+1 ), Point( morph_size, morph_size ) );
 
     if (!capture.isOpened()) {
         //error in opening the video input
@@ -95,10 +91,7 @@ void processVideo(char *videoFilename) {
         pMOG2->apply(frame, fgMaskMOG2,0);
         //TODO: morpho opening comment
         Mat finalMat = fgMaskMOG2.clone();
-        for (int i=1;i<10;i++)
-        {
-            morphologyEx(fgMaskMOG2,finalMat, MORPH_OPEN, element);
-        }
+        medianBlur(finalMat,finalMat,5);
         imshow("Final",finalMat);
         //get the frame number and write it on the current frame
         stringstream ss;
