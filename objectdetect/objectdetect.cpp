@@ -24,6 +24,8 @@ void help();
 template<class T>
 void processVideo(T vidSource);
 
+bool loadConfig(Config &conf,const string configPath);
+
 // Initialize settings
 class Config{
  protected:
@@ -51,12 +53,7 @@ int main(int argc, char *argv[]) {
     help();
     return EXIT_FAILURE;
   }
-
-  conf.readConf(argv[1]);
-
-  // Load settings from conf file.
-  conf.threshold = conf.pt.get<int>("BS_SETTING.THRESHOLD");
-  conf.maxVal = conf.pt.get<int>("BS_SETTING.MAXVALUE");
+  loadConfig(conf,argv[1]);
 
   //create GUI windows
   namedWindow("Current Frame");
@@ -89,8 +86,11 @@ void help() {
       << endl;
 }
 
+
 template<class T>
 void processVideo(T vidSource) {
+  string savePath = "/home/ninearif/Pictures/output/";
+
   //create the capture object
   VideoCapture capture(vidSource);
 
@@ -106,7 +106,7 @@ void processVideo(T vidSource) {
     exit(EXIT_FAILURE);
   }
   //read input data. ESC or 'q' for quitting
-  Mat diffFrame,grayMat, threshFrame,thf;
+  Mat diffFrame,grayMat, threshFrame,threshFrame2;
   bgModelFrame = currFrame.clone();
   int keyPressed = 0;
 
@@ -114,22 +114,49 @@ void processVideo(T vidSource) {
     imshow("Current Frame", currFrame);
 
     absdiff(bgModelFrame,currFrame,diffFrame); // Absolute differences between the 2 images
-    threshold(diffFrame,threshFrame,conf.threshold,conf.maxVal,CV_THRESH_BINARY); // set threshold to ignore small differences you can also use inrange function
+    cvtColor(diffFrame,grayMat,CV_BGR2GRAY);
+    threshold(grayMat,threshFrame,25,conf.maxVal,CV_THRESH_BINARY); // set threshold to ignore small differences you can also use inrange function
+
     medianBlur(threshFrame,threshFrame,5);
-    imshow("BG",diffFrame);
+//    imshow("TH2",threshFrame2);
     imshow("TH",threshFrame);
 
     //get input from keyboard
     keyPressed = waitKey(30);
+
     if ((char) keyPressed == KEY_ESC) {
       break;
     } else if ((char) keyPressed == KEY_N){
       bgModelFrame = currFrame.clone();
       imshow ("Background Model",bgModelFrame);
     }
+    else if ((char) keyPressed == KEY_S){
+      string t = getOccurredTime();
+      string c = getRandString(7);
+
+      string diffPath = savePath + "diff_" + t + "_" + c;
+      string thPath = savePath + "thresh_" + t + "_" + c;
+      string crrPath = savePath + "curr_" + t + "_" + c;
+      string bgPath = savePath + "bg_" + t + "_" + c;
+
+      imwrite(diffPath,diffFrame);
+      imwrite(crrPath,currFrame);
+      imwrite(thPath,threshFrame);
+      imwrite(bgPath,bgModelFrame);
+    }
 
     capture >> currFrame; // capture next currFrame
   }
   //delete capture object
   capture.release();
+}
+
+bool loadConfig(Config &conf,const string configPath){
+  if(conf.readConf(configPath))
+    return 1;
+
+  // Load settings from conf file.
+  conf.threshold = conf.pt.get<int>("BS_SETTING.THRESHOLD");
+  conf.maxVal = conf.pt.get<int>("BS_SETTING.MAXVALUE");
+  return 0;
 }
