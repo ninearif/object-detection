@@ -30,3 +30,5 @@ _ReSharper*/
 
 .idea/
 debug/
+vid/
+cmake-build-debug/
