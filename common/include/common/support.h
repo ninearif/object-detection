@@ -5,11 +5,13 @@
 #include <boost/filesystem.hpp>
 
 #if __linux__
-#define KEY_UP      1113938
-#define KEY_DOWN    1113940
-#define KEY_RIGHT   1113939
-#define KEY_LEFT    1113937
-#define KEY_ENTER   1048586
+#define KEY_UP      82
+#define KEY_DOWN    84
+#define KEY_RIGHT   83
+#define KEY_LEFT    81
+#define KEY_ENTER   13
+#define KEY_ESC     27
+#define KEY_N       110
 #else
 #define KEY_UP      2490368
 #define KEY_DOWN    2621440
@@ -18,8 +20,9 @@
 #define KEY_ENTER   13
 #endif
 
-namespace fs = boost::filesystem;
+std::string getRandString(const int len);
 
-std::vector<fs::path> filterImages(std::string inputDir);
+std::string getOccurredTime(void);
 
+std::string createSavePath(std::string saveDir);
 #endif //OBJECT_DETECT_SUPPORT_H
