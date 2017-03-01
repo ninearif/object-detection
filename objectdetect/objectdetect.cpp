@@ -110,7 +110,15 @@ void processVideo(T vidSource) {
   bgModelFrame = currFrame.clone();
   int keyPressed = 0;
 
+  Mat curForeground, prevForeground, tmp;
+  absdiff(currFrame, currFrame, prevForeground);
+  cvtColor(prevForeground,prevForeground,CV_BGR2GRAY);
+  float alpha = 0.99;
+  float beta = 1-alpha;
+  int updateForeground = 1;
+  int counter = 0;
   while (!currFrame.empty()) {
+    counter++;
     imshow("Current Frame", currFrame);
 
     absdiff(bgModelFrame,currFrame,diffFrame); // Absolute differences between the 2 images
@@ -120,7 +128,14 @@ void processVideo(T vidSource) {
     medianBlur(threshFrame,threshFrame,5);
 //    imshow("TH2",threshFrame2);
     imshow("TH",threshFrame);
-
+    if(counter >= updateForeground){
+      addWeighted(prevForeground,alpha,threshFrame,beta,0.0,prevForeground);
+      threshold(prevForeground,tmp,50,255,CV_THRESH_TOZERO);
+      Mat test;
+      applyColorMap(tmp, test, COLORMAP_JET);
+      imshow("AVG",test);
+      counter=0;
+    }
     //get input from keyboard
     keyPressed = waitKey(30);
 
