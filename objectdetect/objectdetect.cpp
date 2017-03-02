@@ -24,8 +24,6 @@ void help();
 template<class T>
 void processVideo(T vidSource);
 
-bool loadConfig(Config &conf,const string configPath);
-
 // Initialize settings
 class Config{
  protected:
@@ -43,6 +41,8 @@ class Config{
   }
 };
 
+bool loadConfig(Config &conf,const string configPath);
+
 Config conf;
 
 int main(int argc, char *argv[]) {
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   loadConfig(conf,argv[1]);
 
   //create GUI windows
-  namedWindow("Current Frame");
+  namedWindow("Current Frame",WINDOW_AUTOSIZE);
   if (strcmp(argv[2], "-vid") == 0) {
     string videoPath = argv[3];
     processVideo(videoPath);
@@ -110,32 +110,41 @@ void processVideo(T vidSource) {
   bgModelFrame = currFrame.clone();
   int keyPressed = 0;
 
-  Mat curForeground, prevForeground, tmp;
+  Mat curForeground, prevForeground, staticMask, coloredStaticMask;
   absdiff(currFrame, currFrame, prevForeground);
   cvtColor(prevForeground,prevForeground,CV_BGR2GRAY);
   float alpha = 0.99;
   float beta = 1-alpha;
-  int updateForeground = 1;
+  int updateInterval = 2;
   int counter = 0;
   while (!currFrame.empty()) {
     counter++;
     imshow("Current Frame", currFrame);
 
+    /*****************************************
+     * Background Subtraction
+     *****************************************/
     absdiff(bgModelFrame,currFrame,diffFrame); // Absolute differences between the 2 images
     cvtColor(diffFrame,grayMat,CV_BGR2GRAY);
     threshold(grayMat,threshFrame,25,conf.maxVal,CV_THRESH_BINARY); // set threshold to ignore small differences you can also use inrange function
 
+    /*****************************************
+     * Reduce Noise & Improve mask
+     *****************************************/
     medianBlur(threshFrame,threshFrame,5);
-//    imshow("TH2",threshFrame2);
-    imshow("TH",threshFrame);
-    if(counter >= updateForeground){
+    imshow("Background subtraction",threshFrame);
+
+    /*****************************************
+     * Static Object filtering
+     *****************************************/
+    if(counter >= updateInterval){
       addWeighted(prevForeground,alpha,threshFrame,beta,0.0,prevForeground);
-      threshold(prevForeground,tmp,50,255,CV_THRESH_TOZERO);
-      Mat test;
-      applyColorMap(tmp, test, COLORMAP_JET);
-      imshow("AVG",test);
+      threshold(prevForeground,staticMask,50,255,CV_THRESH_TOZERO);
+      applyColorMap(staticMask, coloredStaticMask, COLORMAP_JET);
+      imshow("Static object heat map",coloredStaticMask);
       counter=0;
     }
+
     //get input from keyboard
     keyPressed = waitKey(30);
 
@@ -145,19 +154,8 @@ void processVideo(T vidSource) {
       bgModelFrame = currFrame.clone();
       imshow ("Background Model",bgModelFrame);
     }
-    else if ((char) keyPressed == KEY_S){
-      string t = getOccurredTime();
-      string c = getRandString(7);
+    else if ((char) keyPressed == KEY_U){
 
-      string diffPath = savePath + "diff_" + t + "_" + c;
-      string thPath = savePath + "thresh_" + t + "_" + c;
-      string crrPath = savePath + "curr_" + t + "_" + c;
-      string bgPath = savePath + "bg_" + t + "_" + c;
-
-      imwrite(diffPath,diffFrame);
-      imwrite(crrPath,currFrame);
-      imwrite(thPath,threshFrame);
-      imwrite(bgPath,bgModelFrame);
     }
 
     capture >> currFrame; // capture next currFrame
