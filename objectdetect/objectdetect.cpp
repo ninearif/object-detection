@@ -56,7 +56,11 @@ int main(int argc, char *argv[]) {
   loadConfig(conf,argv[1]);
 
   //create GUI windows
-  namedWindow("Current Frame",WINDOW_AUTOSIZE);
+  namedWindow("Current Frame",WINDOW_FREERATIO);
+  namedWindow("Static object",WINDOW_FREERATIO);
+  namedWindow("Background subtraction",WINDOW_FREERATIO);
+  namedWindow("Background Model",WINDOW_FREERATIO);
+
   if (strcmp(argv[2], "-vid") == 0) {
     string videoPath = argv[3];
     processVideo(videoPath);
@@ -141,7 +145,7 @@ void processVideo(T vidSource) {
       addWeighted(prevForeground,alpha,threshFrame,beta,0.0,prevForeground);
       threshold(prevForeground,staticMask,50,255,CV_THRESH_TOZERO);
       applyColorMap(staticMask, coloredStaticMask, COLORMAP_JET);
-      imshow("Static object heat map",coloredStaticMask);
+      imshow("Static object",coloredStaticMask);
       counter=0;
     }
 
