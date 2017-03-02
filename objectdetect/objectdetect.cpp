@@ -3,8 +3,7 @@
 #include "opencv2/imgproc.hpp"
 #include "opencv2/videoio.hpp"
 #include <opencv2/highgui.hpp>
-#include <opencv2/video.hpp>
-#include <opencv2/features2d.hpp>
+
 //boost
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/ini_parser.hpp>
@@ -25,12 +24,12 @@ template<class T>
 void processVideo(T vidSource);
 
 // Initialize settings
-class Config{
+class Config {
  protected:
  public:
   int threshold, maxVal;
   boost::property_tree::ptree pt;
-  bool readConf(string configPath){
+  bool readConf(string configPath) {
     try {
       boost::property_tree::ini_parser::read_ini(configPath, pt);
     } catch (exception) {
@@ -41,7 +40,7 @@ class Config{
   }
 };
 
-bool loadConfig(Config &conf,const string configPath);
+bool loadConfig(Config &conf, const string configPath);
 
 Config conf;
 
@@ -53,13 +52,13 @@ int main(int argc, char *argv[]) {
     help();
     return EXIT_FAILURE;
   }
-  loadConfig(conf,argv[1]);
+  loadConfig(conf, argv[1]);
 
   //create GUI windows
-  namedWindow("Current Frame",WINDOW_FREERATIO);
-  namedWindow("Static object",WINDOW_FREERATIO);
-  namedWindow("Background subtraction",WINDOW_FREERATIO);
-  namedWindow("Background Model",WINDOW_FREERATIO);
+  namedWindow("Current Frame", WINDOW_FREERATIO);
+  namedWindow("Static object", WINDOW_FREERATIO);
+  namedWindow("Background subtraction", WINDOW_FREERATIO);
+  namedWindow("Background Model", WINDOW_FREERATIO);
 
   if (strcmp(argv[2], "-vid") == 0) {
     string videoPath = argv[3];
@@ -90,7 +89,6 @@ void help() {
       << endl;
 }
 
-
 template<class T>
 void processVideo(T vidSource) {
   string savePath = "/home/ninearif/Pictures/output/";
@@ -98,27 +96,30 @@ void processVideo(T vidSource) {
   //create the capture object
   VideoCapture capture(vidSource);
 
+  //caupturing setting
+  capture.set(CV_CAP_PROP_EXPOSURE, 15);
+
   if (!capture.isOpened()) {
     //error in opening the video input
     cerr << "Unable to open" << endl;
     exit(EXIT_FAILURE);
   }
 
-  if (!capture.read(currFrame)){
+  if (!capture.read(currFrame)) {
     //error in opening the video input
     cerr << "Error while reading frame: " << endl;
     exit(EXIT_FAILURE);
   }
   //read input data. ESC or 'q' for quitting
-  Mat diffFrame,grayMat, threshFrame,threshFrame2;
+  Mat diffFrame, grayMat, threshFrame, threshFrame2;
   bgModelFrame = currFrame.clone();
   int keyPressed = 0;
 
   Mat curForeground, prevForeground, staticMask, coloredStaticMask;
   absdiff(currFrame, currFrame, prevForeground);
-  cvtColor(prevForeground,prevForeground,CV_BGR2GRAY);
+  cvtColor(prevForeground, prevForeground, CV_BGR2GRAY);
   float alpha = 0.99;
-  float beta = 1-alpha;
+  float beta = 1 - alpha;
   int updateInterval = 2;
   int counter = 0;
   while (!currFrame.empty()) {
@@ -128,25 +129,29 @@ void processVideo(T vidSource) {
     /*****************************************
      * Background Subtraction
      *****************************************/
-    absdiff(bgModelFrame,currFrame,diffFrame); // Absolute differences between the 2 images
-    cvtColor(diffFrame,grayMat,CV_BGR2GRAY);
-    threshold(grayMat,threshFrame,25,conf.maxVal,CV_THRESH_BINARY); // set threshold to ignore small differences you can also use inrange function
+    absdiff(bgModelFrame, currFrame, diffFrame); // Absolute differences between the 2 images
+    cvtColor(diffFrame, grayMat, CV_BGR2GRAY);
+    threshold(grayMat,
+              threshFrame,
+              25,
+              conf.maxVal,
+              CV_THRESH_BINARY); // set threshold to ignore small differences you can also use inrange function
 
     /*****************************************
      * Reduce Noise & Improve mask
      *****************************************/
-    medianBlur(threshFrame,threshFrame,5);
-    imshow("Background subtraction",threshFrame);
+    medianBlur(threshFrame, threshFrame, 5);
+    imshow("Background subtraction", threshFrame);
 
     /*****************************************
      * Static Object filtering
      *****************************************/
-    if(counter >= updateInterval){
-      addWeighted(prevForeground,alpha,threshFrame,beta,0.0,prevForeground);
-      threshold(prevForeground,staticMask,50,255,CV_THRESH_TOZERO);
+    if (counter >= updateInterval) {
+      addWeighted(prevForeground, alpha, threshFrame, beta, 0.0, prevForeground);
+      threshold(prevForeground, staticMask, 50, 255, CV_THRESH_TOZERO);
       applyColorMap(staticMask, coloredStaticMask, COLORMAP_JET);
-      imshow("Static object",coloredStaticMask);
-      counter=0;
+      imshow("Static object", coloredStaticMask);
+      counter = 0;
     }
 
     //get input from keyboard
@@ -154,12 +159,11 @@ void processVideo(T vidSource) {
 
     if ((char) keyPressed == KEY_ESC) {
       break;
-    } else if ((char) keyPressed == KEY_N){
+    } else if ((char) keyPressed == KEY_N) {
       bgModelFrame = currFrame.clone();
-      imshow ("Background Model",bgModelFrame);
-    }
-    else if ((char) keyPressed == KEY_U){
-
+      imshow("Background Model", bgModelFrame);
+    } else if ((char) keyPressed == KEY_U) {
+      
     }
 
     capture >> currFrame; // capture next currFrame
@@ -168,8 +172,8 @@ void processVideo(T vidSource) {
   capture.release();
 }
 
-bool loadConfig(Config &conf,const string configPath){
-  if(conf.readConf(configPath))
+bool loadConfig(Config &conf, const string configPath) {
+  if (conf.readConf(configPath))
     return 1;
 
   // Load settings from conf file.
